@@ -36,6 +36,109 @@ SD2 ENDS
 CSEG SEGMENT para public 'CODE'
  	assume CS:CSEG, DS:SD1
 
+; чтение цифры, как символа и преобразование к числовому значению
+read_digit:
+ 	mov ah, 01h
+ 	int 21h
+ 	sub al, 30h
+ 	ret
+
+; вывод на экран содержимого регистра dl
+print_dl:
+	mov ah, 2
+ 	int 21h
+	ret
+
+; вывод на экран символа пробела
+print_space:
+	mov dl, 020h
+	call print_dl
+	ret
+
+; вывод на экран символа новой строки
+print_endl:
+	mov dl, 0Dh
+	call print_dl
+	mov dl, 0Ah
+	call print_dl
+	ret
+
+; вывод на экран строки, указанной в dx
+print_line:
+	mov ah, 09h
+	int 21h
+	ret
+
+; вывод на экран символа соответствующего цифре
+print_digit:
+	add dl, 30h
+	call print_dl
+	ret
+
+; чтение матрицы новой строки
+read_matrix:
+ 	xor bx, 0
+	for_rows:
+		mov es:0010, cx
+		mov cx, 0
+
+	;счетчик для строк в DS
+		mov ax, 10h
+		mov es:0000, ax
+
+		mov ax, 0
+		mov al, [cols]
+		mov cx, ax
+
+	for_cols:
+		call read_digit
+		mov [ds:matrix + bx], al
+		inc bx
+		
+	loop for_cols
+
+	;возвращаю значения и передаю новое значение начала строки в bx
+		mov cx, es:0010
+		add bx, es:0000
+		mov ax, 0
+		mov al, [cols]
+		sub bx, ax
+	loop for_rows
+	ret
+
+print_matrix:
+	print_for_rows:
+		mov es:0010, cx
+		mov cx, 0
+		mov ax, 0
+
+		mov ax, 10h
+		mov es:0000, ax
+
+		mov ax, 0
+		mov al, [cols]
+		mov cx, ax
+
+		print_for_cols:
+			mov dl, [ds:matrix + bx]
+			add dl, 30h
+			mov ah, 2
+			inc bx
+			int 21h
+			call print_space
+		
+		loop print_for_cols
+		
+		call print_endl
+		
+		mov cx, es:0010
+		add bx, es:0000
+		mov ax, 0
+		mov al, [cols]
+		sub bx, ax
+	loop print_for_rows
+	ret
+
 main:
 	mov ax, SD1
 	mov ds, ax
